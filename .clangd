@@ -1,0 +1,7 @@
+If:
+  PathMatch: .*\.[ch]
+
+CompileFlags:
+  Compiler: clang
+  Add: [-std=c89, -Wall, -pedantic-errors, -Werror=return-type, -Werror, -Wextra]
+
