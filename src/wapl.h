@@ -63,9 +63,9 @@
 /* Functions for setting the app name, the version, the author, the project URL, and other information.
  * TODO: I think it would be nice if we had a way to add custom global metadata as well. I should add
  * something for this. */
-void wapl_setVersion(const char *const version, const size_t length);
-void wapl_setAuthor(const char *const author, const size_t length);
-void wapl_setUrl(const char *const url, const size_t length);
+/* void wapl_setVersion(const char *const version, const size_t length); */
+/* void wapl_setAuthor(const char *const author, const size_t length); */
+/* void wapl_setUrl(const char *const url, const size_t length); */
 
 /* Context object definition. Contexts have their whole struct passed directly back to the caller,
  * instead of being accessed through a pointer, since we're OK with the client having full
@@ -74,6 +74,10 @@ typedef struct {
     const char* ptr;
     size_t length;
 } wapl_String;
+
+extern wapl_String *const wapl_author;
+extern wapl_String *const wapl_version;
+extern wapl_String *const wapl_url;
 
 /* Convenience for C consumers of the library so they can alias a C-style string into a context or
  * something similar. The "C" notation here indicated that this function is meant to be called
