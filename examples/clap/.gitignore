@@ -1,0 +1,5 @@
+/target/
+/examples/clap/target/
+*.o
+*.obj
+*.a
