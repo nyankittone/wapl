@@ -60,13 +60,6 @@
 
 #include <stddef.h>
 
-/* Functions for setting the app name, the version, the author, the project URL, and other information.
- * TODO: I think it would be nice if we had a way to add custom global metadata as well. I should add
- * something for this. */
-/* void wapl_setVersion(const char *const version, const size_t length); */
-/* void wapl_setAuthor(const char *const author, const size_t length); */
-/* void wapl_setUrl(const char *const url, const size_t length); */
-
 /* Context object definition. Contexts have their whole struct passed directly back to the caller,
  * instead of being accessed through a pointer, since we're OK with the client having full
  * read-write access to individual fields in the struct. */
@@ -75,9 +68,19 @@ typedef struct {
     size_t length;
 } wapl_String;
 
-extern wapl_String *const wapl_author;
-extern wapl_String *const wapl_version;
-extern wapl_String *const wapl_url;
+/* How will I "extend" this to include custom fields other than ones in there? I should read over
+ * my brainstorming at some point... */
+typedef struct {
+    wapl_String name;
+    wapl_String author;
+    wapl_String version;
+    wapl_String url;
+} wapl_AppInfo;
+
+/* Returns zero-initialized version of an AppInfo struct. 
+ * Hopefully, this function doesn't actually need to be used from Rust, so I may not need it. It's
+ * unknown. */
+wapl_AppInfo wapl_newApp(void);
 
 /* Convenience for C consumers of the library so they can alias a C-style string into a context or
  * something similar. The "C" notation here indicated that this function is meant to be called
@@ -94,54 +97,83 @@ typedef struct {
 wapl_Context wapl_copyContext(const wapl_Context *const context);
 
 typedef void *const wapl_CompoundError;
-typedef wapl_CompoundError (*wapl_Converter)(wapl_String in, void *const out);
+typedef wapl_CompoundError (*wapl_Converter)(wapl_String param, void *const target);
 
 typedef struct {
     wapl_String name;
     wapl_String highlighting;
-    wapl_Converter converter; /* How I in Rust make a safe interface for casting the void*? */
+    wapl_Converter converter; /* How do I in Rust make a safe interface for casting the void*? */
 } wapl_Type;
 
 wapl_Type wapl_copyType(const wapl_Type *const type);
-wapl_Type wapl_copyTypeWithConverter(const wapl_Type *const type, wapl_Converter converter);
-extern const wapl_Type *const wapl_type_i8;
-extern const wapl_Type *const wapl_type_i16;
-extern const wapl_Type *const wapl_type_i32;
-extern const wapl_Type *const wapl_type_i64;
-extern const wapl_Type *const wapl_type_isize;
-extern const wapl_Type *const wapl_type_u8;
-extern const wapl_Type *const wapl_type_u16;
-extern const wapl_Type *const wapl_type_u32;
-extern const wapl_Type *const wapl_type_u64;
-extern const wapl_Type *const wapl_type_usize;
-extern const wapl_Type *const wapl_type_f32;
-extern const wapl_Type *const wapl_type_f64;
-extern const wapl_Type *const wapl_type_make_true;
-extern const wapl_Type *const wapl_type_make_false;
-extern const wapl_Type *const wapl_type_string;
+
+extern const wapl_Type wapl_type_i8;
+extern const wapl_Type wapl_type_i16;
+extern const wapl_Type wapl_type_i32;
+extern const wapl_Type wapl_type_i64;
+extern const wapl_Type wapl_type_isize;
+extern const wapl_Type wapl_type_u8;
+extern const wapl_Type wapl_type_u16;
+extern const wapl_Type wapl_type_u32;
+extern const wapl_Type wapl_type_u64;
+extern const wapl_Type wapl_type_usize;
+extern const wapl_Type wapl_type_f32;
+extern const wapl_Type wapl_type_f64;
+extern const wapl_Type wapl_type_string;
+
+typedef struct {
+    wapl_String label;
+    wapl_Type type;
+} wapl_ParameterSpec;
+
+typedef struct {
+    wapl_ParameterSpec *const ptr;
+    size_t length;
+} wapl_ParameterSpecs;
+
+typedef wapl_CompoundError (*wapl_Action)(wapl_ParameterSpecs params, void *const target);
+
+extern const wapl_Action wapl_action_i8;
+extern const wapl_Action wapl_action_i16;
+extern const wapl_Action wapl_action_i32;
+extern const wapl_Action wapl_action_i64;
+extern const wapl_Action wapl_action_isize;
+extern const wapl_Action wapl_action_u8;
+extern const wapl_Action wapl_action_u16;
+extern const wapl_Action wapl_action_u32;
+extern const wapl_Action wapl_action_u64;
+extern const wapl_Action wapl_action_usize;
+extern const wapl_Action wapl_action_f32;
+extern const wapl_Action wapl_action_f64;
+extern const wapl_Action wapl_action_string;
+extern const wapl_Action wapl_action_true;
+extern const wapl_Action wapl_action_false;
 
 typedef struct {
     wapl_String *const ptr;
     size_t length;
-} wapl_StringCollection;
+} wapl_Strings;
 
-/* Does this type here make sense to be a part of this header file? */
 typedef struct {
     wapl_Type *const ptr;
     size_t length;
-} wapl_TypeCollection;
+} wapl_Types;
 
 typedef struct {
-    wapl_String label;
     wapl_String description;
-    wapl_Type type;
+    wapl_ParameterSpecs params;
+    wapl_Action action;
+    void *const target;
 } wapl_PositionalArg;
 
 typedef struct {
     wapl_String shorthands;
-    wapl_StringCollection longhands;
+    wapl_Strings longhands;
     wapl_String description;
-    wapl_TypeCollection parameters;
+    wapl_ParameterSpecs params; /* I will want generator functions for setting up actions and types
+                                   for single-parameter options. */
+    wapl_Action action;
+    void *const target;
 } wapl_OptionalArg;
 
 typedef struct {
@@ -161,7 +193,7 @@ void wapl_addParserDesc(wapl_Parser *const parser, const wapl_CmdDescription des
  * arguments instead of an error, and will just try to error out with a compound error it holds in
  * its private state. I can only do this if I enforce that extra types can be used to validate the
  * entire input. */
-wapl_StringCollection wapl_parse(wapl_Parser *const parser);
+wapl_Strings wapl_parse(wapl_Parser *const parser);
 
 wapl_Parser wapl_addSubcommand(wapl_Parser *const parent, const char *const name, const size_t name_length);
 
