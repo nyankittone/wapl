@@ -1,0 +1,5 @@
+-Wall
+-Werror
+-Wextra
+-pedantic-errors
+-ansi

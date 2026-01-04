@@ -13,11 +13,17 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +27 term://~//7814:/usr/bin/bash
-badd +1 Programming/Wapl/src/wapl.h
+badd +85 term://~//7814:/usr/bin/bash
+badd +69 Programming/Wapl/src/wapl.h
+badd +27 term://~//213035:/usr/bin/bash
+badd +2 Programming/Wapl_Test/src/main.rs
+badd +706 term://~/Programming/Wapl_Test//215036:/usr/bin/bash
+badd +11 Programming/Wapl_Test/Cargo.toml
+badd +2 Programming/Wapl_Test/build.rs
+badd +7 Programming/Wapl/src/main.c
 argglobal
 %argdel
-edit Programming/Wapl/src/wapl.h
+edit Programming/Wapl/src/main.c
 let s:save_splitbelow = &splitbelow
 let s:save_splitright = &splitright
 set splitbelow splitright
@@ -36,8 +42,9 @@ set winminwidth=0
 set winwidth=1
 exe 'vert 1resize ' . ((&columns * 112 + 112) / 225)
 exe 'vert 2resize ' . ((&columns * 112 + 112) / 225)
+tcd ~/Programming/Wapl
 argglobal
-balt term://~//7814:/usr/bin/bash
+balt ~/Programming/Wapl/src/wapl.h
 setlocal foldmethod=manual
 setlocal foldexpr=0
 setlocal foldmarker={{{,}}}
@@ -48,12 +55,12 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 69 - ((8 * winheight(0) + 24) / 49)
+let s:l = 7 - ((6 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 69
-normal! 0
+keepjumps 7
+normal! 013|
 lcd ~/Programming/Wapl
 wincmd w
 argglobal
@@ -70,11 +77,11 @@ setlocal foldlevel=0
 setlocal foldminlines=1
 setlocal foldnestmax=20
 setlocal foldenable
-let s:l = 59 - ((48 * winheight(0) + 24) / 49)
+let s:l = 85 - ((48 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 59
+keepjumps 85
 normal! 03|
 lcd ~/Programming/Wapl
 wincmd w

@@ -89,7 +89,7 @@ typedef struct {
 
 wapl_Context wapl_copyContext(const wapl_Context *const context);
 
-typedef void *const wapl_CompoundError;
+typedef void *wapl_CompoundError;
 typedef wapl_CompoundError (*wapl_Converter)(wapl_String param, void *const target);
 
 typedef struct {
@@ -175,7 +175,7 @@ typedef struct {
 } wapl_CmdDescription;
 
 /* Argument parser. */
-typedef void *const wapl_Parser;
+typedef void *wapl_Parser;
 wapl_Parser wapl_newParser(const char *const name, const size_t name_length);
 void wapl_addParserPositionals(wapl_Parser *const parser, const wapl_PositionalArg *const args, const size_t args_length);
 void wapl_addParserOptionals(wapl_Parser *const parser, const wapl_OptionalArg *const args, const size_t args_length);
