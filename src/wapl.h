@@ -70,17 +70,10 @@ typedef struct {
 
 /* How will I "extend" this to include custom fields other than ones in there? I should read over
  * my brainstorming at some point... */
-typedef struct {
-    wapl_String name;
-    wapl_String author;
-    wapl_String version;
-    wapl_String url;
-} wapl_AppInfo;
-
-/* Returns zero-initialized version of an AppInfo struct. 
- * Hopefully, this function doesn't actually need to be used from Rust, so I may not need it. It's
- * unknown. */
-wapl_AppInfo wapl_newApp(void);
+extern wapl_String *const wapl_name;
+extern wapl_String *const wapl_author;
+extern wapl_String *const wapl_version;
+extern wapl_String *const wapl_url;
 
 /* Convenience for C consumers of the library so they can alias a C-style string into a context or
  * something similar. The "C" notation here indicated that this function is meant to be called
