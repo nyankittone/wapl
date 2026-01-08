@@ -1,6 +1,8 @@
 #ifndef _WAPL_DEFINED
 #define _WAPL_DEFINED
 
+#include <stdbool.h>
+
 /* Okay, so how will I design this library?
  * I want to make it so that objects are handled through opaque pointers haded back from a factory
  * function. This will make implementing the Rust binding easier to do, and makes it harder for
@@ -60,46 +62,37 @@
 
 #include <stddef.h>
 
-/* Context object definition. Contexts have their whole struct passed directly back to the caller,
- * instead of being accessed through a pointer, since we're OK with the client having full
- * read-write access to individual fields in the struct. */
-typedef struct {
-    const char* ptr;
-    size_t length;
-} wapl_String;
-
 /* How will I "extend" this to include custom fields other than ones in there? I should read over
  * my brainstorming at some point... */
-extern wapl_String *const wapl_name;
-extern wapl_String *const wapl_author;
-extern wapl_String *const wapl_version;
-extern wapl_String *const wapl_url;
-
-/* Convenience for C consumers of the library so they can alias a C-style string into a context or
- * something similar. The "C" notation here indicated that this function is meant to be called
- * from C code only. */
-void wapl_C_setString(wapl_String *const dest, const char *const src);
+extern char *const wapl_name;
+extern char *const wapl_author;
+extern char *const wapl_version;
+extern char *const wapl_url;
 
 typedef struct {
-    wapl_String color_info,
-                color_warn,
-                color_error,
-                color_fatal;
+    char *color_info,
+          color_warn,
+          color_error,
+          color_fatal;
 } wapl_Context;
 
 wapl_Context wapl_copyContext(const wapl_Context *const context);
 
 typedef void *wapl_CompoundError;
-typedef wapl_CompoundError (*wapl_Converter)(wapl_String param, void *const target);
+typedef wapl_CompoundError (*wapl_Converter)(char *const param, size_t param_length, void *const target);
 
 typedef struct {
-    wapl_String name;
-    wapl_String highlighting;
+    char *name;
+    char *highlighting;
     wapl_Converter converter; /* How do I in Rust make a safe interface for casting the void*? */
 } wapl_Type;
 
 wapl_Type wapl_copyType(const wapl_Type *const type);
 
+extern const wapl_Type wapl_type_c_int;
+extern const wapl_Type wapl_type_c_long;
+extern const wapl_Type wapl_type_c_short;
+extern const wapl_Type wapl_type_c_char;
 extern const wapl_Type wapl_type_i8;
 extern const wapl_Type wapl_type_i16;
 extern const wapl_Type wapl_type_i32;
@@ -115,7 +108,7 @@ extern const wapl_Type wapl_type_f64;
 extern const wapl_Type wapl_type_string;
 
 typedef struct {
-    wapl_String label;
+    char *label;
     wapl_Type type;
 } wapl_ParameterSpec;
 
@@ -126,6 +119,14 @@ typedef struct {
 
 typedef wapl_CompoundError (*wapl_Action)(wapl_ParameterSpecs params, void *const target);
 
+extern const wapl_Action wapl_action_c_int;
+extern const wapl_Action wapl_action_c_long;
+extern const wapl_Action wapl_action_c_short;
+extern const wapl_Action wapl_action_c_char;
+extern const wapl_Action wapl_action_f32;
+extern const wapl_Action wapl_action_f64;
+extern const wapl_Action wapl_action_true;
+extern const wapl_Action wapl_action_false;
 extern const wapl_Action wapl_action_i8;
 extern const wapl_Action wapl_action_i16;
 extern const wapl_Action wapl_action_i32;
@@ -136,47 +137,53 @@ extern const wapl_Action wapl_action_u16;
 extern const wapl_Action wapl_action_u32;
 extern const wapl_Action wapl_action_u64;
 extern const wapl_Action wapl_action_usize;
-extern const wapl_Action wapl_action_f32;
-extern const wapl_Action wapl_action_f64;
 extern const wapl_Action wapl_action_string;
-extern const wapl_Action wapl_action_true;
-extern const wapl_Action wapl_action_false;
 
 typedef struct {
-    wapl_String *const ptr;
+    wapl_StringSlice *const ptr;
     size_t length;
-} wapl_Strings;
+} wapl_StringSlices;
+
+typedef struct {
+    char **ptr;
+    size_t length;
+} wapl_CStrings;
 
 typedef struct {
     wapl_Type *const ptr;
     size_t length;
 } wapl_Types;
 
+// This type is used for passing boolean flags to things in this library. I just wanted a name for
+// it that's more descriptive then `int`.
+typedef int wapl_OptionFlag;
+
 typedef struct {
-    wapl_String description;
+    char *description;
     wapl_ParameterSpecs params;
     wapl_Action action;
     void *const target;
 } wapl_PositionalArg;
 
 typedef struct {
-    wapl_String shorthands;
-    wapl_Strings longhands;
-    wapl_String description;
+    char *shorthands;
+    wapl_CStrings longhands;
+    char *description;
     wapl_ParameterSpecs params; /* I will want generator functions for setting up actions and types
                                    for single-parameter options. */
     wapl_Action action;
     void *const target;
+    wapl_OptionFlag flags;
 } wapl_OptionalArg;
 
 typedef struct {
-    wapl_String small;
-    wapl_String large;
+    char *small;
+    char *large;
 } wapl_CmdDescription;
 
 /* Argument parser. */
 typedef void *wapl_Parser;
-wapl_Parser wapl_newParser(const char *const name, const size_t name_length);
+wapl_Parser wapl_newParser(const char *const name);
 void wapl_addParserPositionals(wapl_Parser *const parser, const wapl_PositionalArg *const args, const size_t args_length);
 void wapl_addParserOptionals(wapl_Parser *const parser, const wapl_OptionalArg *const args, const size_t args_length);
 
@@ -186,8 +193,63 @@ void wapl_addParserDesc(wapl_Parser *const parser, const wapl_CmdDescription des
  * arguments instead of an error, and will just try to error out with a compound error it holds in
  * its private state. I can only do this if I enforce that extra types can be used to validate the
  * entire input. */
-wapl_Strings wapl_parse(wapl_Parser *const parser);
+wapl_StringSlices wapl_parse(wapl_Parser *const parser);
 
-wapl_Parser wapl_addSubcommand(wapl_Parser *const parent, const char *const name, const size_t name_length);
+typedef short wapl_Enum;
+wapl_Parser wapl_addSubcommand(wapl_Parser *const parent, const char *const name, wapl_Enum flag, wapl_Enum *const flag_target);
+
+// We can customize an argument parser's interpretation of options (and only options) on the level
+// of individual ones. Basically controlling the syntax of the start of a flag and what splits
+// individual parameters for that option.
+// To keep things simple and in my bounds of sanity, I think I'll only have global parser rules for
+// this. We need:
+// * A function for looking at a token to see if the thing we're on is the start of a short or long
+// option or neither
+// * A boolean for controlling if I want short options to be combinable in a single token (there
+// might be a more flexiable way of doing this that I can't think of, but this is simple and likely
+// good enough for my needs)
+// * A function for determining what splits the beginning of an option specifier with its
+// parameters. Should be possible to have no split, and have it controllable based on the option in
+// question.
+// * Either a list of delimiters or a function for determining how to split parameters into
+// individual tokens. The function way is more flexiable, so I'll probably go with that.
+typedef struct {
+    enum {
+        WAPL_TOKEN_TYPE_POSITIONAL,
+        WAPL_TOKEN_TYPE_SHORT,
+        WAPL_TOKEN_TYPE_LONG,
+    } kind;
+    char *option_name; // parameter is ignored if `kind` is `WAPL_TOKEN_TYPE_POSITIONAL`. 
+    size_t option_name_length; // parameter is ignored if `kind` is `WAPL_TOKEN_TYPE_POSITIONAL`.
+    char *remaining; // parameter is ignored if `kind` is `WAPL_TOKEN_TYPE_POSITIONAL`.
+} wapl_TokenInfo;
+
+typedef struct {
+    bool has_first;
+    char *first;
+} wapl_FirstArgResult;
+
+typedef struct {
+    bool split_it;
+    char *left_split;
+    size_t left_split_length;
+    char *split_remaining;
+} wapl_TokenSplitResult;
+
+typedef struct {
+    wapl_TokenInfo (*token_type_finder)(char *token);
+    bool shorts_combinable;
+    wapl_FirstArgResult (*find_parameters_start)(size_t tokens_scanned, const char *token);
+    wapl_TokenSplitResult (*token_splitter)(size_t tokens_scanned, const char *token);
+} wapl_OptionParser;
+
+// TODO: Don't forget required options!
+// TODO: Add a way to set up an argument parser that can persist between multiple invocations
+// without knowing until parse time what struct it needs to write to. I think the simplest way is to
+// make a way for it to store a pointer offset into a struct, rather than a raw pointer that looks
+// at a field of an already defined struct.
+// Except wait a minute, how would subcommands work? With this model, subcommand structs must be
+// stored inside the root command struct. Is this really how I want to structure my data?
+// I think I *am* okay with it overall, because otherwise I would not know how to do this lmao
 
 #endif
