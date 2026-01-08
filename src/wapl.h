@@ -4,19 +4,13 @@
 #include <stdbool.h>
 
 /* Okay, so how will I design this library?
- * I want to make it so that objects are handled through opaque pointers haded back from a factory
- * function. This will make implementing the Rust binding easier to do, and makes it harder for
- * calling code to break invariants.
- * Doing the above will make it not really possible to have objects live on the stack, so we'll need
- * a fast way of creating and destroying objects, and functions for destroying any given object.
  * For color pallettes, I want them to be stored in "color contexts", where an object can be used
  * with a specific color context in mind. There should also be a "global" color context that exists
  * by default and can be written to.
- * In fact, it may be a good idea to have "contexts" for a variety of assets that could change, as
- * well as a "meta-context" that can be composed of multiple other contexts.
+ * In fact, it may be a good idea to have "contexts" for a variety of assets that could change.
  * We'll also want some global state for the program name, its version number, and possibly other
  * details I forgot. This should be stuff that will be used to initialize the argument parser
- * object.
+ * object. We should also make it in such a way so it can be easily extended with custom info.
  *
  * The argument parser needs to support a handful of features for me to be happy:
  * positional arguments
@@ -64,19 +58,23 @@
 
 /* How will I "extend" this to include custom fields other than ones in there? I should read over
  * my brainstorming at some point... */
-extern char *const wapl_name;
-extern char *const wapl_author;
-extern char *const wapl_version;
-extern char *const wapl_url;
+extern const char *wapl_name;
+extern const char *wapl_author;
+extern const char *wapl_version;
+extern const char *wapl_url;
 
 typedef struct {
     char *color_info,
-          color_warn,
-          color_error,
-          color_fatal;
+        *color_warn,
+        *color_error,
+        *color_fatal;
 } wapl_Context;
 
 wapl_Context wapl_copyContext(const wapl_Context *const context);
+
+// I don't know if I should let this be a thing or not. TODO: re-evaluate if direct read/write
+// access for the global context makes sense at all.
+extern wapl_Context wapl_default_context;
 
 typedef void *wapl_CompoundError;
 typedef wapl_CompoundError (*wapl_Converter)(char *const param, size_t param_length, void *const target);
@@ -140,11 +138,6 @@ extern const wapl_Action wapl_action_usize;
 extern const wapl_Action wapl_action_string;
 
 typedef struct {
-    wapl_StringSlice *const ptr;
-    size_t length;
-} wapl_StringSlices;
-
-typedef struct {
     char **ptr;
     size_t length;
 } wapl_CStrings;
@@ -193,7 +186,7 @@ void wapl_addParserDesc(wapl_Parser *const parser, const wapl_CmdDescription des
  * arguments instead of an error, and will just try to error out with a compound error it holds in
  * its private state. I can only do this if I enforce that extra types can be used to validate the
  * entire input. */
-wapl_StringSlices wapl_parse(wapl_Parser *const parser);
+char **wapl_parse(wapl_Parser *const parser);
 
 typedef short wapl_Enum;
 wapl_Parser wapl_addSubcommand(wapl_Parser *const parent, const char *const name, wapl_Enum flag, wapl_Enum *const flag_target);

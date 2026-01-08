@@ -5,15 +5,16 @@
 #define OPTIONAL_ARGS_MAX (32)
 
 typedef struct Parser {
-    wapl_String short_description;
-    wapl_String long_description; /* TODO: See if a more sophisticated string type would be better
+    char *short_description;
+    char *long_description; /* TODO: See if a more sophisticated string type would be better
                                      here. */
 
     struct {
         size_t count;
         wapl_PositionalArg array[POSITIONAL_ARGS_MAX];
 
-        wapl_String variable_args;
+        char **variable_args; // I think it makes sense to let the arg parser manage the variadic
+                              // positionals.
     } positionals;
 
     struct {
