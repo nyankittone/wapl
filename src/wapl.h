@@ -58,35 +58,71 @@
 
 /* How will I "extend" this to include custom fields other than ones in there? I should read over
  * my brainstorming at some point... */
-extern const char *wapl_name;
-extern const char *wapl_author;
-extern const char *wapl_version;
-extern const char *wapl_url;
+
+// So, I kinda want this library to be a little more thread-safe, so in the bindings, I don't have
+// to slap a mutex on all of the global data.
+// The simple and most portable way to do this is by not having the library's globals be mutable at
+// all. They're only readable, and even then, indirectly through a function interface. We configure
+// stuff not by mutating global state, but instead by getting some template object and changing that
+// locally, before passing that object to something else. This is OK, but it means I have no control
+// over the "default" properties spit out by those functions. This is mainly an issue with the
+// color pallette object.
+// Another possibility would be to have a way to configure global state in one shot, and have a lock
+// to prevent changes to the configuration after the fact, but this one-shot approach can't be
+// thread-safe as long as the value used to lock is not atomic, which we can olny get with either
+// C11 or non-portable methods. So the former approach is the way to go here.
 
 typedef struct {
     char *color_info,
-        *color_warn,
-        *color_error,
-        *color_fatal;
+         *color_warn,
+         *color_error,
+         *color_fatal;
+} wapl_ColorPallette;
+
+// TODO: Anything in a Context struct should have a way to add cutom fields. How tf will I do that?
+typedef struct {
+    char *name;
+    char *author;
+    char *version;
+    char *url;
+    char *short_description;
+    char *long_description;
+} wapl_AppInfo;
+
+// The context object is passed to things like the logger and pargument parser, and similar things.
+// It specifies things should be printed out, and what should be printed when we need to print, for
+// example, the application name.
+// For most cases, when we copy a context, we want the color pallette to be kept, so a pointer seems
+// ideal for this. TODO: Think about how the logger would use this context effectively.
+typedef struct {
+    wapl_ColorPallette *colors;
+    wapl_AppInfo app_info;
 } wapl_Context;
 
-wapl_Context wapl_copyContext(const wapl_Context *const context);
+// The `mask` parameter here and for wapl_makeApp is used to "customize" the default color pallette
+// and app info returned. Any fields in those mask parameters that are non-zero or non-NULL will
+// "overwrite" the default value for that field.
+wapl_ColorPallette wapl_makePallette(wapl_ColorPallette mask);
+wapl_Context wapl_makeApp(const wapl_ColorPallette *const colors, wapl_AppInfo app_mask);
 
-// I don't know if I should let this be a thing or not. TODO: re-evaluate if direct read/write
-// access for the global context makes sense at all.
-extern wapl_Context wapl_default_context;
-
+// TODO: Having the library hand an opaque pointer for a compound error while handling allocation
+// behind the scenes is not thread-safe. We'll need to actually have the type definition for a
+// compound error here so we can return it by-value to the caller. That means I need to decide
+// how this thing is composed...
 typedef void *wapl_CompoundError;
 typedef wapl_CompoundError (*wapl_Converter)(char *const param, size_t param_length, void *const target);
 
+// A "type" in this library is some info used to specify how some kinds of parameters should be shown in the help, and how they should be converted from their string form to whatever.
 typedef struct {
     char *name;
     char *highlighting;
     wapl_Converter converter; /* How do I in Rust make a safe interface for casting the void*? */
 } wapl_Type;
 
-wapl_Type wapl_copyType(const wapl_Type *const type);
+wapl_Type wapl_copyType(const wapl_Type *const type); // I forgot why this function exists.
+wapl_Type wapl_deriveType(const wapl_Type *const type, wapl_Converter custom_converter); // idk...
 
+// Providing some pre-defined types sqo that parsing basic parameters is easier to do.
 extern const wapl_Type wapl_type_c_int;
 extern const wapl_Type wapl_type_c_long;
 extern const wapl_Type wapl_type_c_short;
@@ -115,8 +151,15 @@ typedef struct {
     size_t length;
 } wapl_ParameterSpecs;
 
+// An action is a function that is used to actually write the parsed data into the destination
+// structure. When attached to a parser, it can be set up to either target one field in a struct, or
+// the struct as a whole if the action was programmed to treat the target pointer as that kind of
+// struct. The latter case is useful when you have a more complicated action that needs more context
+// than just the destination of one data point. The disadvantage of this approach is that it's not
+// at all type-safe... I do wonder how we'll handle this in a nicer way within Rust, if we can.
 typedef wapl_CompoundError (*wapl_Action)(wapl_ParameterSpecs params, void *const target);
 
+// Some pre-defined actions, so that you won't have to write your own in the common case.
 extern const wapl_Action wapl_action_c_int;
 extern const wapl_Action wapl_action_c_long;
 extern const wapl_Action wapl_action_c_short;
