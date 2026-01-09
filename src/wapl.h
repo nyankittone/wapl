@@ -103,7 +103,7 @@ typedef struct {
 // and app info returned. Any fields in those mask parameters that are non-zero or non-NULL will
 // "overwrite" the default value for that field.
 wapl_ColorPallette wapl_makePallette(wapl_ColorPallette mask);
-wapl_Context wapl_makeApp(const wapl_ColorPallette *const colors, wapl_AppInfo app_mask);
+wapl_Context wapl_makeApp(wapl_ColorPallette *const colors, wapl_AppInfo app_mask);
 
 // TODO: Having the library hand an opaque pointer for a compound error while handling allocation
 // behind the scenes is not thread-safe. We'll need to actually have the type definition for a
