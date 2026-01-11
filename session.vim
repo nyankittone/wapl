@@ -13,20 +13,15 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +385 term://~//7814:/usr/bin/bash
-badd +178 Programming/Wapl/src/wapl.h
-badd +27 term://~//213035:/usr/bin/bash
-badd +2 Programming/Wapl_Test/src/main.rs
-badd +864 term://~/Programming/Wapl_Test//215036:/usr/bin/bash
-badd +11 Programming/Wapl_Test/Cargo.toml
-badd +2 Programming/Wapl_Test/build.rs
-badd +7 Programming/Wapl/src/main.c
-badd +2 Programming/Wapl/mk_posix.sh
-badd +5 Programming/Wapl/compile_flags.txt
-badd +5 Programming/Wapl/examples/clap/.gitignore
+badd +8 term://~//17974:/usr/bin/bash
+badd +41 Programming/Wapl/src/type_act.c
+badd +386 term://~/Programming/Wapl//20741:/usr/bin/bash
+badd +191 man://sscanf(3)
+badd +1 man://printf(3)
+badd +6 /tmp/thing.c
 argglobal
 %argdel
-edit Programming/Wapl/examples/clap/.gitignore
+edit Programming/Wapl/src/type_act.c
 let s:save_splitbelow = &splitbelow
 let s:save_splitright = &splitright
 set splitbelow splitright
@@ -45,9 +40,8 @@ set winminwidth=0
 set winwidth=1
 exe 'vert 1resize ' . ((&columns * 112 + 112) / 225)
 exe 'vert 2resize ' . ((&columns * 112 + 112) / 225)
-tcd ~/Programming/Wapl
 argglobal
-balt ~/Programming/Wapl/src/wapl.h
+balt man://sscanf(3)
 setlocal foldmethod=manual
 setlocal foldexpr=0
 setlocal foldmarker={{{,}}}
@@ -58,20 +52,20 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 5 - ((4 * winheight(0) + 24) / 49)
+let s:l = 41 - ((40 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 5
+keepjumps 41
 normal! 0
 lcd ~/Programming/Wapl
 wincmd w
 argglobal
-if bufexists(fnamemodify("term://~//7814:/usr/bin/bash", ":p")) | buffer term://~//7814:/usr/bin/bash | else | edit term://~//7814:/usr/bin/bash | endif
+if bufexists(fnamemodify("term://~/Programming/Wapl//20741:/usr/bin/bash", ":p")) | buffer term://~/Programming/Wapl//20741:/usr/bin/bash | else | edit term://~/Programming/Wapl//20741:/usr/bin/bash | endif
 if &buftype ==# 'terminal'
-  silent file term://~//7814:/usr/bin/bash
+  silent file term://~/Programming/Wapl//20741:/usr/bin/bash
 endif
-balt ~/Programming/Wapl/src/wapl.h
+balt /tmp/thing.c
 setlocal foldmethod=manual
 setlocal foldexpr=0
 setlocal foldmarker={{{,}}}
@@ -80,11 +74,11 @@ setlocal foldlevel=0
 setlocal foldminlines=1
 setlocal foldnestmax=20
 setlocal foldenable
-let s:l = 385 - ((48 * winheight(0) + 24) / 49)
+let s:l = 386 - ((48 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 385
+keepjumps 386
 normal! 03|
 lcd ~/Programming/Wapl
 wincmd w
