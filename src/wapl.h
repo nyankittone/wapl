@@ -110,7 +110,13 @@ wapl_Context wapl_makeApp(wapl_ColorPallette *const colors, wapl_AppInfo app_mas
 // compound error here so we can return it by-value to the caller. That means I need to decide
 // how this thing is composed...
 typedef void *wapl_CompoundError;
-typedef wapl_CompoundError (*wapl_Converter)(char *const param, size_t param_length, void *const target);
+
+// TODO: I would prefer having this thing return a CompoundError that is then merged into a greater
+// one, but that mayu have implications on performance. If I can find a way to address this, I want
+// to change the CompoundError being passed in via a parameter to a thing returned.
+typedef void (*wapl_Converter)(wapl_CompoundError *const errors, char *const param, size_t param_length, void *const target);
+#define mConverter(name) void name \
+    (wapl_CompoundError *const errors, char *const param, size_t param_length, void *const target)
 
 // A "type" in this library is some info used to specify how some kinds of parameters should be shown in the help, and how they should be converted from their string form to whatever.
 typedef struct {
