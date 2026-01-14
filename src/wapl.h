@@ -72,22 +72,46 @@
 // thread-safe as long as the value used to lock is not atomic, which we can olny get with either
 // C11 or non-portable methods. So the former approach is the way to go here.
 
+#define WAPL_STRING_COLLECTION_CAPACITY (256)
 typedef struct {
-    char *color_info,
-         *color_warn,
-         *color_error,
-         *color_fatal;
-} wapl_ColorPallette;
+    char *array[WAPL_STRING_COLLECTION_CAPACITY];
+    char **extra;
+    size_t largest_index;
+    size_t capacity;
+} wapl_StringCollection;
+
+// Defining index values for highlighting rules. A better way to do this would be to generate code
+#define WAPL_HL_DEFAULT ((size_t) 1)
+#define WAPL_HL_INFO ((size_t) 2)
+#define WAPL_HL_WARN ((size_t) 3)
+#define WAPL_HL_ERROR ((size_t) 4)
+#define WAPL_HL_FATAL ((size_t) 5)
+#define WAPL_HL_NAME ((size_t) 6)
+#define WAPL_HL_AUTHOR ((size_t) 7)
+#define WAPL_HL_VERSION ((size_t) 8)
+#define WAPL_HL_URL ((size_t) 9)
+#define WAPL_HL_BEYOND_DEFAULT ((size_t) 10)
+typedef wapl_StringCollection wapl_Highlights;
+
+#define WAPL_APPINFO_NAME ((size_t) 1)
+#define WAPL_APPINFO_AUTHOR ((size_t) 2)
+#define WAPL_APPINFO_AUTHOR_PRETTY ((size_t) 3)
+#define WAPL_APPINFO_VERSION ((size_t) 4)
+#define WAPL_APPINFO_URL ((size_t) 5)
+#define WAPL_APPINFO_SHORT_DESCRIPTION ((size_t) 6)
+#define WAPL_APPINFO_LONG_DESCRIPTION ((size_t) 7)
+#define WAPL_APPINFO_BEYOND_DEFAULT ((size_t) 8)
+typedef wapl_StringCollection wapl_AppInfo;
 
 // TODO: Anything in a Context struct should have a way to add cutom fields. How tf will I do that?
-typedef struct {
-    char *name;
-    char *author;
-    char *version;
-    char *url;
-    char *short_description;
-    char *long_description;
-} wapl_AppInfo;
+// typedef struct {
+//     char *name;
+//     char *author;
+//     char *version;
+//     char *url;
+//     char *short_description;
+//     char *long_description;
+// } wapl_AppInfo;
 
 // The context object is passed to things like the logger and pargument parser, and similar things.
 // It specifies things should be printed out, and what should be printed when we need to print, for
@@ -95,14 +119,14 @@ typedef struct {
 // For most cases, when we copy a context, we want the color pallette to be kept, so a pointer seems
 // ideal for this. TODO: Think about how the logger would use this context effectively.
 typedef struct {
-    wapl_ColorPallette *colors;
+    wapl_Highlights *colors;
     wapl_AppInfo app_info;
 } wapl_Context;
 
 // The `mask` parameter here and for wapl_makeApp is used to "customize" the default color pallette
 // and app info returned. Any fields in those mask parameters that are non-zero or non-NULL will
 // "overwrite" the default value for that field.
-wapl_ColorPallette wapl_makePallette(wapl_ColorPallette mask);
+wapl_Highlights wapl_makePallette(wapl_CoreHighlights mask);
 wapl_Context wapl_makeApp(wapl_ColorPallette *const colors, wapl_AppInfo app_mask);
 
 // TODO: Having the library hand an opaque pointer for a compound error while handling allocation
@@ -112,7 +136,7 @@ wapl_Context wapl_makeApp(wapl_ColorPallette *const colors, wapl_AppInfo app_mas
 typedef void *wapl_CompoundError;
 
 // TODO: I would prefer having this thing return a CompoundError that is then merged into a greater
-// one, but that mayu have implications on performance. If I can find a way to address this, I want
+// one, but that may have implications on performance. If I can find a way to address this, I want
 // to change the CompoundError being passed in via a parameter to a thing returned.
 typedef void (*wapl_Converter)(wapl_CompoundError *const errors, char *const param, size_t param_length, void *const target);
 #define mConverter(name) void name \
