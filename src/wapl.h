@@ -80,7 +80,12 @@ typedef struct {
     size_t capacity;
 } wapl_StringCollection;
 
-// Defining index values for highlighting rules. A better way to do this would be to generate code
+typedef size_t wapl_StringCollectionID;
+
+// Defining index values for highlighting rules. I am currently unsure if using an enum or a set of
+// #define directives is the better approach in regards to ease of using this library from other
+// languages, but that is a simple change to make, so I'll think about it later. Gut is telling me
+// to use macros for now.
 #define WAPL_HL_DEFAULT ((size_t) 1)
 #define WAPL_HL_INFO ((size_t) 2)
 #define WAPL_HL_WARN ((size_t) 3)
@@ -104,14 +109,15 @@ typedef wapl_StringCollection wapl_Highlights;
 typedef wapl_StringCollection wapl_AppInfo;
 
 // TODO: Anything in a Context struct should have a way to add cutom fields. How tf will I do that?
-// typedef struct {
-//     char *name;
-//     char *author;
-//     char *version;
-//     char *url;
-//     char *short_description;
-//     char *long_description;
-// } wapl_AppInfo;
+typedef struct {
+    char *name;
+    char *author;
+    char *author_pretty;
+    char *version;
+    char *url;
+    char *short_description;
+    char *long_description;
+} wapl_AppInfoBuilder;
 
 // The context object is passed to things like the logger and pargument parser, and similar things.
 // It specifies things should be printed out, and what should be printed when we need to print, for
@@ -123,11 +129,39 @@ typedef struct {
     wapl_AppInfo app_info;
 } wapl_Context;
 
+// Creates a new instance of a highlight object, copied from a private value inside the library. The
+// client can make modifications to this copy to fit their needs.
+wapl_Highlights wapl_newHighlights(void);
+
+// Takes the existing highlight object `from`, deep-copies it, and returns it. Calling this function
+// with NULL as the input is invalid, and will cause an assertion failure.
+wapl_Highlights wapl_copyHighlights(const wapl_Highlights *const from);
+
+// Gets the string for highlighting given a key number. If the key fed in refers to a NULL string,
+// or is out-of-bounds, an empty string is returned. An empty string will also be returned if we're
+// set to not highlight anyway. This function will never return NULL.
+const char *wapl_getHighlight(wapl_Highlights *const highlights, size_t key);
+void wapl_setHighlight(wapl_Highlights *const highlights, size_t key, char *const value);
+void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value);
+
+// TODO: Consider adding a custom formatting function as an alternative to printf and gang,
+// meant for making work with our highlights more convenient than using printf with
+// wapl_getHighlight directly. The problem with this idea is that it's not useful to consumers of
+// the C library.
+// The use case for combining multiple highlights together out of simple primatives is really
+// compelling too. So I'll need to figure that out in the formatting.
+// wapl_hlPrintf(&hl, "@s @d\n", WAPL_HL_INFO, "Hello,", WAPL_HL_ERROR, "world!");
+int wapl_hlPrintf(wapl_Highlights *const highlights, const char *format, ...);
+
 // The `mask` parameter here and for wapl_makeApp is used to "customize" the default color pallette
 // and app info returned. Any fields in those mask parameters that are non-zero or non-NULL will
 // "overwrite" the default value for that field.
-wapl_Highlights wapl_makePallette(wapl_CoreHighlights mask);
-wapl_Context wapl_makeApp(wapl_ColorPallette *const colors, wapl_AppInfo app_mask);
+wapl_Context wapl_newApp(wapl_Highlights *const highlights, wapl_AppInfo app_mask);
+
+// Functions for deallocating any memory that may have been associated with the app info or
+// highlights. Note that deleteApp will call deleteHighlights on the highlight object it holds.
+void deleteHighlights(wapl_Highlights *const highlights);
+void deleteApp(wapl_Context *const context);
 
 // TODO: Having the library hand an opaque pointer for a compound error while handling allocation
 // behind the scenes is not thread-safe. We'll need to actually have the type definition for a
