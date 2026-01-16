@@ -95,6 +95,12 @@ typedef struct {
     wapl_HighlightPart parts[WAPL_HIGHLIGHT_MAX_PARTS];
 } wapl_Highlight;
 
+wapl_Highlight wapl_newHighlight(wapl_HighlightPart part);
+wapl_Highlight wapl_newHighlightFull(wapl_HighlightPart *const parts, size_t length);
+
+// It's preferred to use wapl_newHighlightFull in bindings, since it's going to be faster than C's
+// poor excuse for variadics.
+wapl_Highlight wapl_newHighlightVar(size_t count, ...); // I fucking hate C variadic functions.
 
 // Defining index values for highlighting rules. I am currently unsure if using an enum or a set of
 // #define directives is the better approach in regards to ease of using this library from other
@@ -105,24 +111,40 @@ typedef struct {
 #define WAPL_HL_ITALIC ((size_t) 3)
 #define WAPL_HL_UNDERLINE ((size_t) 4)
 #define WAPL_HL_BLINK ((size_t) 5)
-#define WAPL_HL_INFO ((size_t) 6)
-#define WAPL_HL_WARN ((size_t) 7)
-#define WAPL_HL_ERROR ((size_t) 8)
-#define WAPL_HL_FATAL ((size_t) 9)
-#define WAPL_HL_NAME ((size_t) 10)
-#define WAPL_HL_AUTHOR ((size_t) 11)
-#define WAPL_HL_VERSION ((size_t) 12)
-#define WAPL_HL_URL ((size_t) 13)
-#define WAPL_HL_BEYOND_DEFAULT ((size_t) 14)
+#define WAPL_HL_BLACK ((size_t) 6)
+#define WAPL_HL_RED ((size_t) 7)
+#define WAPL_HL_GREEN ((size_t) 8)
+#define WAPL_HL_YELLOW ((size_t) 9)
+#define WAPL_HL_BLUE ((size_t) 10)
+#define WAPL_HL_MAGENTA ((size_t) 11)
+#define WAPL_HL_CYAN ((size_t) 12)
+#define WAPL_HL_LIGHT_GRAY ((size_t) 13)
+#define WAPL_HL_DARK_GRAY ((size_t) 14)
+#define WAPL_HL_LIGHT_RED ((size_t) 15)
+#define WAPL_HL_LIGHT_GREEN ((size_t) 16)
+#define WAPL_HL_LIGHT_YELLOW ((size_t) 17)
+#define WAPL_HL_LIGHT_BLUE ((size_t) 18)
+#define WAPL_HL_LIGHT_MAGENTA ((size_t) 19)
+#define WAPL_HL_LIGHT_CYAN ((size_t) 20)
+#define WAPL_HL_WHITE ((size_t) 21)
+#define WAPL_HL_INFO ((size_t) 22)
+#define WAPL_HL_WARN ((size_t) 23)
+#define WAPL_HL_ERROR ((size_t) 24)
+#define WAPL_HL_FATAL ((size_t) 25)
+#define WAPL_HL_NAME ((size_t) 26)
+#define WAPL_HL_AUTHOR ((size_t) 27)
+#define WAPL_HL_VERSION ((size_t) 28)
+#define WAPL_HL_URL ((size_t) 29)
+#define WAPL_HL_BEYOND_DEFAULT ((size_t) 30)
 
+#define WAPL_HIGHLIGHTS_CAPACITY (128)
 typedef struct {
-    wapl_Highlight array[128];
-    wapl_Highlight *extra; // When printing out a highlight, I will need a buffer for doing so. It
-                           // may be a good idea to have that buffer located inside this struct as
-                           // another malloced pointer, or as part of an arena shared by `extra`.
+    wapl_Highlight array[WAPL_HIGHLIGHTS_CAPACITY];
+    wapl_Highlight *extra;
     size_t largest_index;
     size_t capacity;
-    bool enable_highlighting;
+    bool heap_cow;
+    bool enable_highlighting; // If I get any more booleans here, I'll use bit flags.
 } wapl_Highlights;
 
 #define WAPL_APPINFO_NAME ((size_t) 1)
@@ -180,7 +202,6 @@ typedef struct {
     bool fits;
     size_t length;
 } wapl_BufferWriteResult;
-
 // Writes the specified highlight into a char buffer of `buffer_length` bytes. The buffer will be
 // null-terminated by this function and the length of the string written is returned, unless the
 // text doesn't fit in the destination buffer.
@@ -193,15 +214,11 @@ wapl_BufferWriteResult wapl_highlightString (
     size_t buffer_length, char *const input
 );
 
+// The fact that I can just write to a highlights group without any guard is... concerning. I may
+// have to re-think this through at some point so that Rust can play more nicely with this kind of
+// library.
 void wapl_setHighlight(wapl_Highlights *const highlights, size_t key, wapl_HighlightPart value);
-void wapl_setHighlightFull(wapl_Highlights *const highlights, size_t key, wapl_HighlightPart *const array, size_t length);
-
-// A variadic macro here feels liek it will be easier to maintain code that uses it, and I don't
-// need this bit of functionality to be available to non-C consumers of the library anyway.
-#define wapl_mSetHighlight(highlights_ptr, key_index, ...) do { \
-    const wapl_HighlightPart array[] = { __VA_ARGS__ }; \
-    wapl_setHighlightFull(highlights_ptr, key_index, array, sizeof(array) / sizeof(wapl_HighlightPart)); \
-} while(0);
+void wapl_setHighlightFull(wapl_Highlights *const highlights, size_t key, wapl_Highlight highlight);
 
 void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value);
 
