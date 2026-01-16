@@ -5,6 +5,12 @@
 #include <assert.h>
 #include "wapl.h"
 
+// This is an iterator object over a single highlight. It's unclear right now if it would be useful
+// to make this part of the public interface, but for now, it lives here.
+struct HighlightIterator {
+    wapl_Highlights *highlights;
+};
+
 wapl_HighlightPart wapl_hlString(char *const string) {
     return (wapl_HighlightPart) {
         .kind = WAPL_HL_KIND_STRING,
@@ -112,7 +118,7 @@ const wapl_Highlight *wapl_getHighlight(wapl_Highlights *const highlights, size_
     assert(highlights != NULL);
 
     if(key >= highlights->largest_index) {
-        return NULL; // TODO: Turn this into a panic or let us wrap the return in an Option<T> thing
+        return NULL; // TODO: Turn this into a panic. Any out-of-bounds problem here is a mistake.
     }
 
     if(key >= WAPL_HIGHLIGHTS_CAPACITY) {
@@ -125,6 +131,19 @@ const wapl_Highlight *wapl_getHighlight(wapl_Highlights *const highlights, size_
 wapl_BufferWriteResult wapl_getHighlightString (
     wapl_Highlights *const highlights, size_t key, char *const buffer, size_t buffer_length
 ) {
+    assert(highlights != NULL);
+    assert(buffer != NULL);
+
+    wapl_Highlight *hl = wapl_getHighlight(highlights, key);
+    char *write_point = buffer;
+    size_t remaining = buffer_length;
+
+    for(size_t i = 0; i < hl->part_count; i++) {
+        // We need an iterator object for getting each of the strings out of a highlight.
+    }
+
+    buffer[0] = '\0';
+    return (wapl_BufferWriteResult) {true, 0};
 }
 
 void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value) {
