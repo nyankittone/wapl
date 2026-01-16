@@ -2,6 +2,7 @@
 #define _WAPL_DEFINED
 
 #include <stdbool.h>
+#include <inttypes.h>
 
 /* Okay, so how will I design this library?
  * For color pallettes, I want them to be stored in "color contexts", where an object can be used
@@ -72,31 +73,57 @@
 // thread-safe as long as the value used to lock is not atomic, which we can olny get with either
 // C11 or non-portable methods. So the former approach is the way to go here.
 
-#define WAPL_STRING_COLLECTION_CAPACITY (256)
 typedef struct {
-    char *array[WAPL_STRING_COLLECTION_CAPACITY];
-    char **extra;
-    size_t largest_index;
-    size_t capacity;
-} wapl_StringCollection;
+    enum {
+        WAPL_HL_KIND_STRING,
+        WAPL_HL_KIND_INDEX,
+    } kind;
+    union {
+        char *string;
+        size_t index;
+    } as;
+} wapl_HighlightPart;
 
-typedef size_t wapl_StringCollectionID;
+// need functions for specifying individual parts of a highlight in a way that feels similar to Rust
+// enums.
+wapl_HighlightPart wapl_hlString(char *const string);
+wapl_HighlightPart wapl_hlIndex(size_t index);
+
+#define WAPL_HIGHLIGHT_MAX_PARTS (8)
+typedef struct {
+    uint8_t part_count;
+    wapl_HighlightPart parts[WAPL_HIGHLIGHT_MAX_PARTS];
+} wapl_Highlight;
+
 
 // Defining index values for highlighting rules. I am currently unsure if using an enum or a set of
 // #define directives is the better approach in regards to ease of using this library from other
 // languages, but that is a simple change to make, so I'll think about it later. Gut is telling me
 // to use macros for now.
 #define WAPL_HL_DEFAULT ((size_t) 1)
-#define WAPL_HL_INFO ((size_t) 2)
-#define WAPL_HL_WARN ((size_t) 3)
-#define WAPL_HL_ERROR ((size_t) 4)
-#define WAPL_HL_FATAL ((size_t) 5)
-#define WAPL_HL_NAME ((size_t) 6)
-#define WAPL_HL_AUTHOR ((size_t) 7)
-#define WAPL_HL_VERSION ((size_t) 8)
-#define WAPL_HL_URL ((size_t) 9)
-#define WAPL_HL_BEYOND_DEFAULT ((size_t) 10)
-typedef wapl_StringCollection wapl_Highlights;
+#define WAPL_HL_BOLD ((size_t) 2)
+#define WAPL_HL_ITALIC ((size_t) 3)
+#define WAPL_HL_UNDERLINE ((size_t) 4)
+#define WAPL_HL_BLINK ((size_t) 5)
+#define WAPL_HL_INFO ((size_t) 6)
+#define WAPL_HL_WARN ((size_t) 7)
+#define WAPL_HL_ERROR ((size_t) 8)
+#define WAPL_HL_FATAL ((size_t) 9)
+#define WAPL_HL_NAME ((size_t) 10)
+#define WAPL_HL_AUTHOR ((size_t) 11)
+#define WAPL_HL_VERSION ((size_t) 12)
+#define WAPL_HL_URL ((size_t) 13)
+#define WAPL_HL_BEYOND_DEFAULT ((size_t) 14)
+
+typedef struct {
+    wapl_Highlight array[128];
+    wapl_Highlight *extra; // When printing out a highlight, I will need a buffer for doing so. It
+                           // may be a good idea to have that buffer located inside this struct as
+                           // another malloced pointer, or as part of an arena shared by `extra`.
+    size_t largest_index;
+    size_t capacity;
+    bool enable_highlighting;
+} wapl_Highlights;
 
 #define WAPL_APPINFO_NAME ((size_t) 1)
 #define WAPL_APPINFO_AUTHOR ((size_t) 2)
@@ -106,7 +133,14 @@ typedef wapl_StringCollection wapl_Highlights;
 #define WAPL_APPINFO_SHORT_DESCRIPTION ((size_t) 6)
 #define WAPL_APPINFO_LONG_DESCRIPTION ((size_t) 7)
 #define WAPL_APPINFO_BEYOND_DEFAULT ((size_t) 8)
-typedef wapl_StringCollection wapl_AppInfo;
+
+#define WAPL_APP_INFO_CAPACITY (256)
+typedef struct {
+    char *array[WAPL_APP_INFO_CAPACITY];
+    char **extra;
+    size_t largest_index;
+    size_t capacity;
+} wapl_AppInfo;
 
 // TODO: Anything in a Context struct should have a way to add cutom fields. How tf will I do that?
 typedef struct {
@@ -140,8 +174,35 @@ wapl_Highlights wapl_copyHighlights(const wapl_Highlights *const from);
 // Gets the string for highlighting given a key number. If the key fed in refers to a NULL string,
 // or is out-of-bounds, an empty string is returned. An empty string will also be returned if we're
 // set to not highlight anyway. This function will never return NULL.
-const char *wapl_getHighlight(wapl_Highlights *const highlights, size_t key);
-void wapl_setHighlight(wapl_Highlights *const highlights, size_t key, char *const value);
+const wapl_Highlight *wapl_getHighlight(wapl_Highlights *const highlights, size_t key);
+
+typedef struct {
+    bool fits;
+    size_t length;
+} wapl_BufferWriteResult;
+
+// Writes the specified highlight into a char buffer of `buffer_length` bytes. The buffer will be
+// null-terminated by this function and the length of the string written is returned, unless the
+// text doesn't fit in the destination buffer.
+wapl_BufferWriteResult wapl_getHighlightString (
+    wapl_Highlights *const highlights, size_t key, char *const buffer, size_t buffer_length
+);
+
+wapl_BufferWriteResult wapl_highlightString (
+    wapl_Highlights *const highlights, size_t key, char *const buffer,
+    size_t buffer_length, char *const input
+);
+
+void wapl_setHighlight(wapl_Highlights *const highlights, size_t key, wapl_HighlightPart value);
+void wapl_setHighlightFull(wapl_Highlights *const highlights, size_t key, wapl_HighlightPart *const array, size_t length);
+
+// A variadic macro here feels liek it will be easier to maintain code that uses it, and I don't
+// need this bit of functionality to be available to non-C consumers of the library anyway.
+#define wapl_mSetHighlight(highlights_ptr, key_index, ...) do { \
+    const wapl_HighlightPart array[] = { __VA_ARGS__ }; \
+    wapl_setHighlightFull(highlights_ptr, key_index, array, sizeof(array) / sizeof(wapl_HighlightPart)); \
+} while(0);
+
 void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value);
 
 // TODO: Consider adding a custom formatting function as an alternative to printf and gang,

@@ -2,35 +2,24 @@
 
 #include "wapl.h"
 
-// Can't wait to come back to this codebase later to see my macro abuse and die inside
-#define mMask(field, default_value) \
-    .field = MASK_NAME.field == 0 ? default_value : MASK_NAME.field
+// A limitation with the approach I'm using here is that I can't easily compose highlights out of
+// other highlights as the caller. I don't think this is the end of the world, since it's still
+// possible with sprintf/snprintf, and it feels like a niche case. However having the ability to
+// override the default highlight value in certain situations could actually be really handy for
+// making certain kind of messages easier to display.
+static wapl_Highlights default_highlights[] = {
+    [WAPL_HL_DEFAULT] = "",
+    [WAPL_HL_BOLD] = "\33[1m",
+    [WAPL_HL_ITALIC] = "\33[3m",
+    [WAPL_HL_UNDERLINE] = "\33[4m",
+    [WAPL_HL_BLINK] = "\33[5m",
+    [WAPL_HL_INFO] = "\33[1m",
+    [WAPL_HL_WARN] = "\33[1;93m",
+    [WAPL_HL_ERROR] = "\33[1;91m",
+    [WAPL_HL_FATAL] = "\33[1;91m",
+    [WAPL_HL_NAME] = "fart",
+    [WAPL_HL_AUTHOR] = "fart",
+    [WAPL_HL_VERSION] = "fart",
+    [WAPL_HL_URL] = "fart",
+};
 
-wapl_ColorPallette wapl_makePallette(wapl_ColorPallette mask) {
-#define MASK_NAME mask
-    return (wapl_ColorPallette) {
-        mMask(color_info, "\33[1m"),
-        mMask(color_warn, "\33[1;93m"),
-        mMask(color_error, "\33[1;95m"),
-        mMask(color_fatal, "\33[1;91m"),
-    };
-#undef MASK_NAME
-}
-
-wapl_Context wapl_makeApp(wapl_ColorPallette *const colors, wapl_AppInfo app_mask) {
-#define MASK_NAME app_mask
-    return (wapl_Context) {
-        .colors = colors,
-        .app_info = {
-            mMask(name, "my_wapl_app"),
-            mMask(author, "John Doe"),
-            mMask(version, "0.0.1"),
-            mMask(url, "https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
-            mMask(short_description, "Default short description. If you see this, this app has a bug!"),
-            mMask(long_description, "Default long description. If you see this, this app has a bug!"),
-        },
-    };
-#undef MASK_NAME
-}
-
-#undef mApplyMask
