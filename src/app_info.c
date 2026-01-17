@@ -5,12 +5,6 @@
 #include <assert.h>
 #include "wapl.h"
 
-// This is an iterator object over a single highlight. It's unclear right now if it would be useful
-// to make this part of the public interface, but for now, it lives here.
-struct HighlightIterator {
-    wapl_Highlights *highlights;
-};
-
 wapl_HighlightPart wapl_hlString(char *const string) {
     return (wapl_HighlightPart) {
         .kind = WAPL_HL_KIND_STRING,
@@ -134,16 +128,52 @@ wapl_BufferWriteResult wapl_getHighlightString (
     assert(highlights != NULL);
     assert(buffer != NULL);
 
-    wapl_Highlight *hl = wapl_getHighlight(highlights, key);
+    const wapl_Highlight *const hl = wapl_getHighlight(highlights, key);
     char *write_point = buffer;
     size_t remaining = buffer_length;
 
     for(size_t i = 0; i < hl->part_count; i++) {
         // We need an iterator object for getting each of the strings out of a highlight.
+        if(hl->parts[i].kind == WAPL_HL_KIND_STRING) {
+            const char *string = hl->parts[i].as.string;
+            const size_t length = strlen(string); // Getting the length of the string each time we have to
+                                                  // use this highlight is annoying and could hurt
+                                                  // performance.
+            if(length >= remaining) {
+                memcpy(write_point, string, remaining - 1);
+                write_point[remaining - 1] = '\0';
+                return (wapl_BufferWriteResult) {.fits = false, .length = buffer_length - 1};
+            }
+
+            memcpy(write_point, string, length);
+            write_point += length;
+            remaining -= length;
+
+            continue;
+        }
+
+        // by this point we can reasonably assume we're working with an index. Later I may want to
+        // add a check for an invariant and do something in that case.
+        const wapl_BufferWriteResult recursive_result = wapl_getHighlightString (
+            highlights,
+            hl->parts[i].as.index,
+            write_point,
+            remaining
+        );
+
+        if(!recursive_result.fits) {
+            return recursive_result;
+        }
+
+        write_point += recursive_result.length;
+        remaining -= recursive_result.length;
     }
 
-    buffer[0] = '\0';
-    return (wapl_BufferWriteResult) {true, 0};
+    *write_point = '\0';
+    return (wapl_BufferWriteResult) {
+        .fits = true,
+        .length = buffer_length - remaining,
+    };
 }
 
 void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value) {
