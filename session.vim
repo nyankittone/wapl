@@ -13,21 +13,23 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +8 term://~//17974:/usr/bin/bash
-badd +41 Programming/Wapl/src/type_act.c
-badd +386 term://~/Programming/Wapl//20741:/usr/bin/bash
-badd +191 man://sscanf(3)
-badd +1 man://printf(3)
-badd +6 /tmp/thing.c
+badd +12 term://~//5143:/usr/bin/bash
+badd +311 Programming/Wapl/src/app_info.c
+badd +23 term://~/Programming/Wapl//5426:/usr/bin/bash
+badd +259 Programming/Wapl/src/wapl.h
 argglobal
 %argdel
-edit Programming/Wapl/src/type_act.c
+edit Programming/Wapl/src/app_info.c
 let s:save_splitbelow = &splitbelow
 let s:save_splitright = &splitright
 set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
 1wincmd h
+wincmd w
+wincmd _ | wincmd |
+split
+1wincmd k
 wincmd w
 let &splitbelow = s:save_splitbelow
 let &splitright = s:save_splitright
@@ -38,10 +40,13 @@ set winminheight=0
 set winheight=1
 set winminwidth=0
 set winwidth=1
-exe 'vert 1resize ' . ((&columns * 112 + 112) / 225)
-exe 'vert 2resize ' . ((&columns * 112 + 112) / 225)
+exe 'vert 1resize ' . ((&columns * 111 + 112) / 225)
+exe '2resize ' . ((&lines * 34 + 25) / 51)
+exe 'vert 2resize ' . ((&columns * 113 + 112) / 225)
+exe '3resize ' . ((&lines * 14 + 25) / 51)
+exe 'vert 3resize ' . ((&columns * 113 + 112) / 225)
 argglobal
-balt man://sscanf(3)
+balt term://~//5143:/usr/bin/bash
 setlocal foldmethod=manual
 setlocal foldexpr=0
 setlocal foldmarker={{{,}}}
@@ -52,20 +57,20 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 41 - ((40 * winheight(0) + 24) / 49)
+let s:l = 322 - ((40 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 41
+keepjumps 322
 normal! 0
 lcd ~/Programming/Wapl
 wincmd w
 argglobal
-if bufexists(fnamemodify("term://~/Programming/Wapl//20741:/usr/bin/bash", ":p")) | buffer term://~/Programming/Wapl//20741:/usr/bin/bash | else | edit term://~/Programming/Wapl//20741:/usr/bin/bash | endif
+if bufexists(fnamemodify("~/Programming/Wapl/src/wapl.h", ":p")) | buffer ~/Programming/Wapl/src/wapl.h | else | edit ~/Programming/Wapl/src/wapl.h | endif
 if &buftype ==# 'terminal'
-  silent file term://~/Programming/Wapl//20741:/usr/bin/bash
+  silent file ~/Programming/Wapl/src/wapl.h
 endif
-balt /tmp/thing.c
+balt term://~/Programming/Wapl//5426:/usr/bin/bash
 setlocal foldmethod=manual
 setlocal foldexpr=0
 setlocal foldmarker={{{,}}}
@@ -74,17 +79,44 @@ setlocal foldlevel=0
 setlocal foldminlines=1
 setlocal foldnestmax=20
 setlocal foldenable
-let s:l = 386 - ((48 * winheight(0) + 24) / 49)
+silent! normal! zE
+let &fdl = &fdl
+let s:l = 260 - ((19 * winheight(0) + 17) / 34)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 386
+keepjumps 260
+normal! 0
+lcd ~/Programming/Wapl
+wincmd w
+argglobal
+if bufexists(fnamemodify("term://~/Programming/Wapl//5426:/usr/bin/bash", ":p")) | buffer term://~/Programming/Wapl//5426:/usr/bin/bash | else | edit term://~/Programming/Wapl//5426:/usr/bin/bash | endif
+if &buftype ==# 'terminal'
+  silent file term://~/Programming/Wapl//5426:/usr/bin/bash
+endif
+balt ~/Programming/Wapl/src/wapl.h
+setlocal foldmethod=manual
+setlocal foldexpr=0
+setlocal foldmarker={{{,}}}
+setlocal foldignore=#
+setlocal foldlevel=0
+setlocal foldminlines=1
+setlocal foldnestmax=20
+setlocal foldenable
+let s:l = 103 - ((13 * winheight(0) + 7) / 14)
+if s:l < 1 | let s:l = 1 | endif
+keepjumps exe s:l
+normal! zt
+keepjumps 103
 normal! 03|
 lcd ~/Programming/Wapl
 wincmd w
-2wincmd w
-exe 'vert 1resize ' . ((&columns * 112 + 112) / 225)
-exe 'vert 2resize ' . ((&columns * 112 + 112) / 225)
+3wincmd w
+exe 'vert 1resize ' . ((&columns * 111 + 112) / 225)
+exe '2resize ' . ((&lines * 34 + 25) / 51)
+exe 'vert 2resize ' . ((&columns * 113 + 112) / 225)
+exe '3resize ' . ((&lines * 14 + 25) / 51)
+exe 'vert 3resize ' . ((&columns * 113 + 112) / 225)
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf

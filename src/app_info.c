@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wapl.h"
+#include "util.c"
 
 wapl_HighlightPart wapl_hlString(char *const string) {
     return (wapl_HighlightPart) {
@@ -300,9 +301,12 @@ wapl_Context wapl_newAppCustom (
         }
 
         const size_t extra_index = key - WAPL_APP_INFO_CAPACITY;
-        if(extra_index >= returned.app_info.capacity) {
-            // TODO: add memory allocation logic here, while setting the capacity
-        }
+        returned.app_info.extra = reallocUntilFits (
+            returned.app_info.extra,
+            &returned.app_info.capacity,
+            WAPL_APP_INFO_CAPACITY,
+            extra_index + 1
+        );
 
         returned.app_info.extra[extra_index] = keyvals[i].value;
     }
