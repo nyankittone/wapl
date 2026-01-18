@@ -28,17 +28,17 @@ static void *mallocOrDie(size_t size) {
     return reallocOrDie(NULL, size);
 }
 
-static void *reallocUntilFits(void *prev, size_t *capacity, size_t init_capacity, size_t target_capacity) {
+static void *reallocUntilFits(void *prev, size_t *capacity, size_t init_capacity, size_t needed_capacity) {
     assert(capacity != NULL);
-    if(target_capacity > *capacity) {
+    if(needed_capacity > *capacity) {
         return prev;
     }
 
     if(*capacity < 2) {
         *capacity = init_capacity;
     }
-        
-    while(*capacity < target_capacity) {
+
+    while(*capacity < needed_capacity) {
         *capacity *= 1.5;
     }
 

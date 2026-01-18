@@ -1,5 +1,6 @@
 -Wall
 -Werror
 -Wextra
+-Wno-unused-function
 -pedantic-errors
 -std=c99

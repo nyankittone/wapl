@@ -194,7 +194,6 @@ wapl_Highlights wapl_newHighlights(void);
 wapl_Highlights wapl_newHighlightsCustom (
     const wapl_HighlightKeyValue *const keyvals, size_t length
 );
-wapl_Highlights wapl_newHighlightsVar(size_t count, ...);
 
 // Takes the existing highlight object `from`, deep-copies it, and returns it. Calling this function
 // with NULL as the input is invalid, and will cause an assertion failure.

@@ -102,6 +102,36 @@ wapl_Highlights wapl_newHighlights(void) {
     return returned;
 }
 
+// copy-pasted from wapl_newAppCustom with a few changes
+wapl_Highlights wapl_newHighlightsCustom (
+    const wapl_HighlightKeyValue *const keyvals, size_t length
+) {
+    assert(keyvals != NULL);
+    wapl_Highlights returned = wapl_newHighlights();
+
+    for(size_t i = 0; i < length; i++) {
+        const size_t key = keyvals[i].key;
+        returned.length = returned.length < key ? key : returned.length;
+
+        if(key < WAPL_HIGHLIGHTS_CAPACITY) {
+            returned.array[i] = keyvals[i].value;
+            continue;
+        }
+
+        const size_t extra_index = key - WAPL_HIGHLIGHTS_CAPACITY;
+        returned.extra = reallocUntilFits (
+            returned.extra,
+            &returned.capacity,
+            WAPL_HIGHLIGHTS_CAPACITY,
+            extra_index + 1
+        );
+
+        returned.extra[extra_index] = keyvals[i].value;
+    }
+
+    return returned;
+}
+
 wapl_Highlights wapl_copyHighlights(const wapl_Highlights *const from) {
     assert(from != NULL);
 
