@@ -173,6 +173,11 @@ typedef struct {
     char *long_description;
 } wapl_AppInfoBuilder;
 
+typedef struct {
+    size_t key;
+    wapl_Highlight value;
+} wapl_HighlightKeyValue;
+
 // The context object is passed to things like the logger and pargument parser, and similar things.
 // It specifies things should be printed out, and what should be printed when we need to print, for
 // example, the application name.
@@ -186,10 +191,18 @@ typedef struct {
 // Creates a new instance of a highlight object, copied from a private value inside the library. The
 // client can make modifications to this copy to fit their needs.
 wapl_Highlights wapl_newHighlights(void);
+wapl_Highlights wapl_newHighlightsCustom (
+    const wapl_HighlightKeyValue *const keyvals, size_t length
+);
+wapl_Highlights wapl_newHighlightsVar(size_t count, ...);
 
 // Takes the existing highlight object `from`, deep-copies it, and returns it. Calling this function
 // with NULL as the input is invalid, and will cause an assertion failure.
 wapl_Highlights wapl_copyHighlights(const wapl_Highlights *const from);
+wapl_Highlights wapl_copyHighlightsCustom (
+    const wapl_Highlights *const from, const wapl_HighlightKeyValue *const keyvals, size_t length
+);
+wapl_Highlights wapl_copyHighlightsVar(const wapl_Highlights *const from, size_t count, ...);
 
 // Gets the string for highlighting given a key number. If the key fed in refers to a NULL string,
 // or is out-of-bounds, an empty string is returned. An empty string will also be returned if we're
@@ -214,12 +227,6 @@ wapl_BufferWriteResult wapl_highlightString (
     size_t buffer_length, char *const input
 );
 
-// The fact that I can just write to a highlights group without any guard is... concerning. I may
-// have to re-think this through at some point so that Rust can play more nicely with this kind of
-// library.
-void wapl_setHighlight(wapl_Highlights *const highlights, size_t key, wapl_HighlightPart value);
-void wapl_setHighlightFull(wapl_Highlights *const highlights, size_t key, wapl_Highlight highlight);
-
 void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value);
 
 // TODO: Add other highlighting functions that operate on a context instead of a highlights object.
@@ -235,10 +242,27 @@ void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value);
 // wapl_hlPrintf(&hl, "@s @d\n", WAPL_HL_INFO, "Hello,", WAPL_HL_ERROR, "world!");
 int wapl_hlPrintf(wapl_Highlights *const highlights, const char *format, ...);
 
+typedef struct {
+    size_t key;
+    char *value;
+} wapl_AppInfoKeyValue;
+
 // The `mask` parameter here and for wapl_makeApp is used to "customize" the default color pallette
 // and app info returned. Any fields in those mask parameters that are non-zero or non-NULL will
 // "overwrite" the default value for that field.
 wapl_Context wapl_newApp(wapl_Highlights *const highlights, wapl_AppInfoBuilder app_mask);
+wapl_Context wapl_newAppCustom (
+    wapl_Highlights *const highlights,
+    wapl_AppInfoBuilder app_mask,
+    const wapl_AppInfoKeyValue *const keyvals,
+    size_t keyvals_length
+);
+wapl_Context wapl_newAppVar (
+    wapl_Highlights *const highlights,
+    wapl_AppInfoBuilder app_mask,
+    size_t keyval_count,
+    ...
+);
 
 // Functions for deallocating any memory that may have been associated with the app info or
 // highlights. Note that deleteApp will call deleteHighlights on the highlight object it holds.
