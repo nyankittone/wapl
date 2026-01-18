@@ -1,8 +1,9 @@
 // This file defines functions for handling not just the AppInfo struct, but also highlights!
 
-#include <stdarg.h>
-#include <string.h>
 #include <assert.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 #include "wapl.h"
 
 wapl_HighlightPart wapl_hlString(char *const string) {
@@ -91,7 +92,7 @@ wapl_Highlights wapl_newHighlights(void) {
             [WAPL_HL_URL] = wapl_newHighlight(wapl_hlIndex(WAPL_HL_UNDERLINE)),
         },
         .extra = NULL,
-        .largest_index = WAPL_HL_BEYOND_DEFAULT,
+        .length = WAPL_HL_BEYOND_DEFAULT,
         .capacity = 0,
         .heap_cow = false,
     };
@@ -111,7 +112,7 @@ wapl_Highlights wapl_copyHighlights(const wapl_Highlights *const from) {
 const wapl_Highlight *wapl_getHighlight(wapl_Highlights *const highlights, size_t key) {
     assert(highlights != NULL);
 
-    if(key >= highlights->largest_index) {
+    if(key >= highlights->length) {
         return NULL; // TODO: Turn this into a panic. Any out-of-bounds problem here is a mistake.
     }
 
@@ -252,5 +253,51 @@ void wapl_setHighlightFull(wapl_Highlights *const highlights, size_t key, wapl_H
 void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value) {
     assert(highlights != NULL);
     highlights->enable_highlighting = value;
+}
+
+wapl_Context wapl_newApp(wapl_Highlights *const highlights, wapl_AppInfoBuilder app_mask) {
+    assert(highlights != NULL);
+
+    #define mMask(field) (app_mask. field ? app_mask. field : "")
+
+    return (wapl_Context) {
+        .colors = highlights,
+        .app_info = {
+            .array = {
+                [WAPL_APPINFO_NAME] = mMask(name),
+                [WAPL_APPINFO_AUTHOR] = mMask(author),
+                [WAPL_APPINFO_VERSION] = mMask(version),
+                [WAPL_APPINFO_URL] = mMask(url),
+                [WAPL_APPINFO_SHORT_DESCRIPTION] = mMask(short_description),
+                [WAPL_APPINFO_LONG_DESCRIPTION] = mMask(long_description),
+            },
+            .extra = NULL,
+            .capacity = 0,
+            .length = WAPL_APPINFO_BEYOND_DEFAULT,
+        },
+    };
+
+    #undef mMask
+}
+
+void deleteHighlights(wapl_Highlights *const highlights) {
+    assert(highlights != NULL);
+
+    if(highlights->extra) {
+        free(highlights->extra);
+    }
+
+    *highlights = (wapl_Highlights) {0};
+}
+
+void deleteApp(wapl_Context *const context) {
+    assert(context != NULL);
+    deleteHighlights(context->colors);
+
+    if(context->app_info.extra) {
+        free(context->app_info.extra);
+    }
+
+    context->app_info = (wapl_AppInfo) {0};
 }
 

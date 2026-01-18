@@ -141,7 +141,7 @@ wapl_Highlight wapl_newHighlightVar(size_t count, ...); // I fucking hate C vari
 typedef struct {
     wapl_Highlight array[WAPL_HIGHLIGHTS_CAPACITY];
     wapl_Highlight *extra;
-    size_t largest_index;
+    size_t length;
     size_t capacity;
     bool heap_cow;
     bool enable_highlighting; // If I get any more booleans here, I'll use bit flags.
@@ -149,7 +149,6 @@ typedef struct {
 
 #define WAPL_APPINFO_NAME ((size_t) 1)
 #define WAPL_APPINFO_AUTHOR ((size_t) 2)
-#define WAPL_APPINFO_AUTHOR_PRETTY ((size_t) 3)
 #define WAPL_APPINFO_VERSION ((size_t) 4)
 #define WAPL_APPINFO_URL ((size_t) 5)
 #define WAPL_APPINFO_SHORT_DESCRIPTION ((size_t) 6)
@@ -160,7 +159,7 @@ typedef struct {
 typedef struct {
     char *array[WAPL_APP_INFO_CAPACITY];
     char **extra;
-    size_t largest_index;
+    size_t length;
     size_t capacity;
 } wapl_AppInfo;
 
@@ -168,7 +167,6 @@ typedef struct {
 typedef struct {
     char *name;
     char *author;
-    char *author_pretty;
     char *version;
     char *url;
     char *short_description;
@@ -209,6 +207,8 @@ wapl_BufferWriteResult wapl_getHighlightString (
     wapl_Highlights *const highlights, size_t key, char *const buffer, size_t buffer_length
 );
 
+// This wraps around `wapl_getHighlightString` to create a highlighted input string from a single
+// specified highlight.
 wapl_BufferWriteResult wapl_highlightString (
     wapl_Highlights *const highlights, size_t key, char *const buffer,
     size_t buffer_length, char *const input
@@ -238,7 +238,7 @@ int wapl_hlPrintf(wapl_Highlights *const highlights, const char *format, ...);
 // The `mask` parameter here and for wapl_makeApp is used to "customize" the default color pallette
 // and app info returned. Any fields in those mask parameters that are non-zero or non-NULL will
 // "overwrite" the default value for that field.
-wapl_Context wapl_newApp(wapl_Highlights *const highlights, wapl_AppInfo app_mask);
+wapl_Context wapl_newApp(wapl_Highlights *const highlights, wapl_AppInfoBuilder app_mask);
 
 // Functions for deallocating any memory that may have been associated with the app info or
 // highlights. Note that deleteApp will call deleteHighlights on the highlight object it holds.
