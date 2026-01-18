@@ -222,6 +222,10 @@ void wapl_setHighlightFull(wapl_Highlights *const highlights, size_t key, wapl_H
 
 void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value);
 
+// TODO: Add other highlighting functions that operate on a context instead of a highlights object.
+// There's probably many times when using this library where that would be more convenient for the
+// client code.
+
 // TODO: Consider adding a custom formatting function as an alternative to printf and gang,
 // meant for making work with our highlights more convenient than using printf with
 // wapl_getHighlight directly. The problem with this idea is that it's not useful to consumers of

@@ -176,6 +176,79 @@ wapl_BufferWriteResult wapl_getHighlightString (
     };
 }
 
+wapl_BufferWriteResult wapl_highlightString (
+    wapl_Highlights *const highlights, size_t key, char *const buffer,
+    size_t buffer_length, char *const input
+) {
+    assert(highlights != NULL);
+    assert(buffer != NULL);
+    assert(input != NULL);
+
+    wapl_BufferWriteResult result = wapl_getHighlightString (
+        highlights,
+        WAPL_HL_DEFAULT,
+        buffer,
+        buffer_length
+    );
+
+    if(!result.fits) {
+        return (wapl_BufferWriteResult) {.fits = false, .length = buffer_length - 1};
+    }
+    
+    char *write_point = buffer + result.length;
+    size_t remaining = buffer_length - result.length;
+
+    result = wapl_getHighlightString(highlights, key, write_point, remaining);
+    if(!result.fits) {
+        return (wapl_BufferWriteResult) {.fits = false, .length = buffer_length - 1};
+    }
+
+    write_point += result.length;
+    remaining -= result.length;
+
+    result = wapl_getHighlightString (
+        highlights,
+        WAPL_HL_DEFAULT,
+        write_point,
+        remaining
+    );
+
+    if(!result.fits) {
+        return (wapl_BufferWriteResult) {.fits = false, .length = buffer_length - 1};
+    }
+
+    return (wapl_BufferWriteResult) {
+        .fits = true,
+        .length = buffer_length - remaining + result.length,
+    };
+}
+
+static wapl_Highlight *prepareAddingHighlight(wapl_Highlights *const highlights, size_t key) {
+    // TODO: Add a check for the key being too large, and do a runtime panic is so.
+
+    if(key >= WAPL_HIGHLIGHTS_CAPACITY) {
+        const size_t extra_index = key - WAPL_HIGHLIGHTS_CAPACITY;
+
+        if(extra_index >= highlights->capacity) {
+            // TODO: realloc() or use some similar function for highlights->extra.
+        }
+
+        return highlights->extra + extra_index;
+    }
+
+    return highlights->array + key;
+}
+
+void wapl_setHighlight(wapl_Highlights *const highlights, size_t key, wapl_HighlightPart value) {
+    assert(highlights != NULL);
+    *prepareAddingHighlight(highlights, key) = wapl_newHighlight(value);
+}
+
+void wapl_setHighlightFull(wapl_Highlights *const highlights, size_t key, wapl_Highlight highlight) {
+    assert(highlights != NULL);
+    *prepareAddingHighlight(highlights, key) = highlight;
+}
+
 void wapl_forceHighlighting(wapl_Highlights *const highlights, bool value) {
     assert(highlights != NULL);
     highlights->enable_highlighting = value;
