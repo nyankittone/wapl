@@ -5,5 +5,5 @@ if [ -z "$CC" ]; then
     CC=cc
 fi
 
-"$CC" $cflags "$@" src/main.c -o wapl.o
+"$CC" $cflags "$@" -c src/main.c -o wapl.o
 ar rcs libwapl.a wapl.o

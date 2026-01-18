@@ -30,11 +30,13 @@ wapl_Highlight wapl_newHighlight(wapl_HighlightPart part) {
 
 wapl_Highlight wapl_newHighlightFull(wapl_HighlightPart *const parts, size_t length) {
     assert(parts != NULL);
+
+    // I may want to think of something better to do here than panic the code...
     assert(length <= WAPL_HIGHLIGHT_MAX_PARTS);
 
     wapl_Highlight returned = {0};
     returned.part_count = length;
-    memcpy(&returned.part_count, parts, sizeof(wapl_HighlightPart) * length);
+    memcpy(returned.parts, parts, sizeof(wapl_HighlightPart) * length);
 
     return returned;
 }
