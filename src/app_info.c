@@ -280,6 +280,36 @@ wapl_Context wapl_newApp(wapl_Highlights *const highlights, wapl_AppInfoBuilder 
     #undef mMask
 }
 
+wapl_Context wapl_newAppCustom (
+    wapl_Highlights *const highlights,
+    wapl_AppInfoBuilder app_mask,
+    const wapl_AppInfoKeyValue *const keyvals,
+    size_t keyvals_length
+) {
+    assert(highlights != NULL);
+
+    wapl_Context returned = wapl_newApp(highlights, app_mask);
+
+    for(size_t i = 0; i < keyvals_length; i++) {
+        const size_t key = keyvals[i].key;
+        returned.app_info.length = returned.app_info.length < key ? key : returned.app_info.length;
+
+        if(key < WAPL_APP_INFO_CAPACITY) {
+            returned.app_info.array[i] = keyvals[i].value;
+            continue;
+        }
+
+        const size_t extra_index = key - WAPL_APP_INFO_CAPACITY;
+        if(extra_index >= returned.app_info.capacity) {
+            // TODO: add memory allocation logic here, while setting the capacity
+        }
+
+        returned.app_info.extra[extra_index] = keyvals[i].value;
+    }
+
+    return returned;
+}
+
 void deleteHighlights(wapl_Highlights *const highlights) {
     assert(highlights != NULL);
 
